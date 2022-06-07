@@ -1,6 +1,7 @@
 import React from "react";
+import ClientsTable from "../components/Tables/ClientsTable";
 const Clients = () => {
-  return <div>Clients</div>;
+  return <ClientsTable />;
 };
 
 export default Clients;

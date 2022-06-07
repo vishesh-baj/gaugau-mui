@@ -8,15 +8,15 @@ import { PATHS } from "../../routes/paths";
 import CreateIcon from "@mui/icons-material/Create";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const CustomerTable = () => {
-  const [customers, setCustomers] = useState([]);
+const ClientsTable = () => {
+  const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
 
   const navigate = useNavigate();
 
   const handleEditClick = (row) => {
-    navigate(PATHS.customerDetails);
+    navigate(PATHS.clientDetails);
     console.log("EDIT ROW: ", row);
   };
 
@@ -24,88 +24,54 @@ const CustomerTable = () => {
     console.log("DELTE ROW: ", row);
   };
 
-  const getcustomers = async () => {
+  const getclients = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3030/api/admin/customerList"
+        "http://localhost:3030/api/admin/clientList"
       );
-      console.log(response.data.Message);
-      setCustomers(response.data.Message);
-      setFilteredCustomers(response.data.Message);
+      console.log(response.data.Data);
+      setClients(response.data.Data);
+      setFilteredClients(response.data.Data);
     } catch (error) {
       console.log(error);
     }
   };
 
   useEffect(() => {
-    getcustomers();
+    getclients();
   }, []);
 
   useEffect(() => {
-    const result = customers.filter((customer) => {
+    const result = clients.filter((client) => {
       return (
         //   other search filters to be added
-        customer.first_name.toLowerCase().match(search.toLowerCase()) ||
-        customer.last_name.toLowerCase().match(search.toLowerCase()) ||
-        customer.mobile_number.toLowerCase().match(search.toLowerCase())
+        client.client_name.toLowerCase().match(search.toLowerCase()) ||
+        client.mobile_number.toLowerCase().match(search.toLowerCase()) ||
+        client.descriptions.toLowerCase().match(search.toLowerCase())
       );
     });
-    setFilteredCustomers(result);
+    setFilteredClients(result);
   }, [search]);
 
   const columns = [
     { name: "S.No", selector: (row) => row.id, sortable: true },
     {
       name: "Name",
-      selector: (row) => row.first_name + " " + row.last_name,
+      selector: (row) => row.client_name,
       sortable: true,
     },
 
     {
-      name: "Mobile",
+      name: "Description",
+      selector: (row) => row.descriptions,
+      sortable: true,
+    },
+    {
+      name: "Mobile Number",
       selector: (row) => row.mobile_number,
       sortable: true,
     },
-    {
-      name: "No. Of Cattles",
-      selector: (row) => row.number_of_cattle_to_buy,
-      sortable: true,
-    },
-    {
-      name: "Client",
-      selector: (row) =>
-        row.campaign_customersref[0] ? (
-          row.campaign_customersref[0].clientref.client_name
-        ) : (
-          <span>empty</span>
-        ),
-      sortable: true,
-    },
-    {
-      name: "Campaign Title",
-      selector: (row) =>
-        row.campaign_customersref[0] ? (
-          row.campaign_customersref[0].campaignsref.campaign_name
-        ) : (
-          <span>empty</span>
-        ),
-      sortable: true,
-    },
-    {
-      name: "State",
-      selector: (row) => row.stateref.name,
-      sortable: true,
-    },
-    {
-      name: "District",
-      selector: (row) => row.districtref.district,
-      sortable: true,
-    },
-    {
-      name: "Tehsil",
-      selector: (row) => row.tehsilref.tahshil,
-      sortable: true,
-    },
+
     {
       name: "Actions",
       cell: (row) => (
@@ -128,9 +94,9 @@ const CustomerTable = () => {
   return (
     <div>
       <DataTable
-        title="customers List"
+        title="clients List"
         columns={columns}
-        data={filteredCustomers}
+        data={filteredClients}
         fixedHeader
         fixedHeaderScrollHeight="450px"
         pagination
@@ -150,4 +116,4 @@ const CustomerTable = () => {
   );
 };
 
-export default CustomerTable;
+export default ClientsTable;
