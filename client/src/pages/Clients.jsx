@@ -1,7 +1,8 @@
 import React from "react";
-import ClientsTable from "../components/Tables/ClientsTable";
+
+import Tabs from "../components/ClientTabs/Tabs";
 const Clients = () => {
-  return <ClientsTable />;
+  return <Tabs />;
 };
 
 export default Clients;

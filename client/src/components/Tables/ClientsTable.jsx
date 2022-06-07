@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import { Stack } from "@mui/material";
+import { Stack, TextField } from "@mui/material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "../../routes/paths";
@@ -15,15 +15,18 @@ const ClientsTable = () => {
 
   const navigate = useNavigate();
 
+  // row edit handler
   const handleEditClick = (row) => {
     navigate(PATHS.clientDetails);
     console.log("EDIT ROW: ", row);
   };
 
+  // row delete handle
   const handleDeleteClick = (row) => {
     console.log("DELTE ROW: ", row);
   };
 
+  // fetch clients data
   const getclients = async () => {
     try {
       const response = await axios.get(
@@ -41,12 +44,15 @@ const ClientsTable = () => {
     getclients();
   }, []);
 
+  // search filter
   useEffect(() => {
     const result = clients.filter((client) => {
       return (
         //   other search filters to be added
         client.client_name.toLowerCase().match(search.toLowerCase()) ||
-        client.mobile_number.toLowerCase().match(search.toLowerCase()) ||
+        String(client.mobile_number)
+          .toLowerCase()
+          .match(search.toLowerCase()) ||
         client.descriptions.toLowerCase().match(search.toLowerCase())
       );
     });
@@ -104,16 +110,16 @@ const ClientsTable = () => {
         responsive
         subHeader
         subHeaderComponent={
-          <input
-            type="text"
-            placeholder="Search"
+          <TextField
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            id="standard-basic"
+            label="Search"
+            variant="standard"
           />
         }
       />
     </div>
   );
 };
-
 export default ClientsTable;
