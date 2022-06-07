@@ -1,5 +1,4 @@
 import * as React from "react";
-import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import MuiDrawer from "@mui/material/Drawer";
 import MuiAppBar from "@mui/material/AppBar";
@@ -21,8 +20,12 @@ import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import WorkIcon from "@mui/icons-material/Work";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import AppDrawerWrapper from "./AppDrawerWrapper";
-import { Link } from "react-router-dom";
+import PowerSettingsNewIcon from "@mui/icons-material/PowerSettingsNew";
+import { Button } from "@mui/material";
+import { Link, useLocation } from "react-router-dom";
 import { PATHS } from "../../routes/paths";
+import { styled, useTheme } from "@mui/material/styles";
+
 const drawerWidth = 240;
 const openedMixin = (theme) => ({
   width: drawerWidth,
@@ -97,10 +100,15 @@ export default function AppDrawer({ children }) {
     setOpen(false);
   };
 
+  const location = useLocation();
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <AppBar position="fixed" open={open}>
+      <AppBar
+        style={{ background: "white", color: "black" }}
+        position="fixed"
+        open={open}
+      >
         <Toolbar>
           <IconButton
             color="inherit"
@@ -114,13 +122,22 @@ export default function AppDrawer({ children }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            {/* This needs to be dynamically updated view routing */}
-            Dashboard
+          <Typography
+            style={{ fontWeight: "bold" }}
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1 }}
+          >
+            {/* dynamic value fetched from react-router-dom's uselocation hook */}
+            {location.pathname.split("/").join(" ").split(" ")[2].toUpperCase()}
           </Typography>
+          <Button variant="text" startIcon={<PowerSettingsNewIcon />}>
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
       <Drawer variant="permanent" open={open}>
+        {/* HERE LOGO WILL COME */}
         <DrawerHeader>
           <IconButton onClick={handleDrawerClose}>
             {theme.direction === "rtl" ? (
@@ -130,7 +147,6 @@ export default function AppDrawer({ children }) {
             )}
           </IconButton>
         </DrawerHeader>
-
         {/* divides in two seperate sections */}
         <Divider />
         <List>
@@ -225,11 +241,11 @@ export default function AppDrawer({ children }) {
           </Link>
 
           {/* Campaign Icon */}
-          <ListItem key="campaigns" disablePadding sx={{ display: "block" }}>
-            <Link
-              style={{ color: "black", textDecoration: "none" }}
-              to={PATHS.campaigns}
-            >
+          <Link
+            style={{ color: "black", textDecoration: "none" }}
+            to={PATHS.campaigns}
+          >
+            <ListItem key="campaigns" disablePadding sx={{ display: "block" }}>
               <ListItemButton
                 sx={{
                   minHeight: 48,
@@ -251,8 +267,8 @@ export default function AppDrawer({ children }) {
                   sx={{ opacity: open ? 1 : 0 }}
                 />
               </ListItemButton>
-            </Link>
-          </ListItem>
+            </ListItem>
+          </Link>
         </List>
       </Drawer>
 

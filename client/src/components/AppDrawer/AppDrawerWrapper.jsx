@@ -14,14 +14,12 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 const AppDrawerWrapper = ({ children }) => {
   return (
-    <div>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <DrawerHeader />
+    <Box component="main" sx={{ flexGrow: 1, p: 3, height: "100vh" }}>
+      <DrawerHeader />
 
-        {/* ROUTING WILL BE IMPLEMENTED HERE */}
-        {children}
-      </Box>
-    </div>
+      {/* ROUTING WILL BE IMPLEMENTED HERE */}
+      {children}
+    </Box>
   );
 };
 
