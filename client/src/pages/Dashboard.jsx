@@ -4,6 +4,8 @@ import axios from "axios";
 import { useState } from "react";
 import { useEffect } from "react";
 import { startCase } from "lodash";
+
+// Item component styles
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#ade8ff",
   ...theme.typography.body2,

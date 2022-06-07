@@ -1,11 +1,16 @@
-import * as React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
 import ClientsTable from "../../components/Tables/ClientsTable";
-import { Stack } from "@mui/material";
+import {
+  Stack,
+  Typography,
+  TextField,
+  Box,
+  Tab,
+  Tabs,
+  Button,
+} from "@mui/material";
+import axios from "axios";
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -41,8 +46,35 @@ function a11yProps(index) {
 
 export default function BasicTabs() {
   const [value, setValue] = React.useState(0);
+  const [clientData, setClientData] = useState({
+    client_name: "",
+    descriptions: "",
+    mobile_number: "",
+  });
+
+  //   post client data api call
+  const postClient = async () => {
+    const response = await axios.post(
+      "http://localhost:3030/api/admin/addClient",
+      clientData
+    );
+    console.log(response);
+  };
+
   const handleChange = (event, newValue) => {
     setValue(newValue);
+  };
+
+  const handleInputChange = (e) => {
+    setClientData({ ...clientData, [e.target.name]: e.target.value });
+  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(clientData);
+    clientData &&
+      postClient().then((res) =>
+        setClientData({ client_name: "", descriptions: "", mobile_number: "" })
+      );
   };
 
   return (
@@ -59,7 +91,58 @@ export default function BasicTabs() {
       </Box>
 
       <TabPanel value={value} index={0}>
-        Add Client
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2} width={"30vw"}>
+            <Typography variant="h6" fontWeight={700}>
+              Add Client
+            </Typography>
+
+            <TextField
+              name="client_name"
+              id="outlined-basic"
+              label="Name"
+              size="small"
+              variant="outlined"
+              onChange={handleInputChange}
+              value={clientData.client_name}
+            />
+            <TextField
+              name="descriptions"
+              id="outlined-basic"
+              label="Description"
+              size="small"
+              variant="outlined"
+              onChange={handleInputChange}
+              value={clientData.descriptions}
+            />
+            <TextField
+              name="mobile_number"
+              id="outlined-basic"
+              label="Mobile"
+              size="small"
+              variant="outlined"
+              onChange={handleInputChange}
+              value={clientData.mobile_number}
+            />
+
+            <Stack marginTop={10} direction="row" spacing={5}>
+              <Button
+                onClick={() =>
+                  setClientData({
+                    client_name: "",
+                    descriptions: "",
+                    mobile_number: "",
+                  })
+                }
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="contained">
+                Add
+              </Button>
+            </Stack>
+          </Stack>
+        </form>
       </TabPanel>
       <TabPanel value={value} index={1}>
         <ClientsTable />
