@@ -1,0 +1,581 @@
+var express = require('express');
+var router = express.Router();
+const sequelize = require("../models/Users")
+var jwt = require('jsonwebtoken');
+var bcrypt = require('bcryptjs');
+const multer = require('multer');
+var SECRET_KEY = "85266";
+var app = express();
+const mailer = require('express-mailer'); // call express
+//const { body, validationResult } = require('express-validator');
+app.set('view engine', 'jade');
+var moment = require('moment');
+let currentDate = moment().format('YYYY-MM-DD'); 
+let differnceTime = moment().format('YYYY-MM-DD h:mm:ss'); 
+var bodyParser = require('body-parser')
+var multiparty = require('multiparty');
+const formidable = require('express-formidable');
+
+app.use( bodyParser.json() );       // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+})); 
+
+
+/****************************jwt********************************************************* */
+let token = jwt.sign({email:"gaugau@gmail.com",id:1},SECRET_KEY, {
+  expiresIn: '24h'
+})
+
+/****************************checkToken********************************************************* */
+
+
+const checkToken = (req, res, next) => {
+  const header = req.headers['authorization'];
+
+  if (header !== 'undefined') {
+    const token = header;
+    req.token = token;
+    next();
+  } else {
+    res.sendStatus(403)
+  }
+}
+
+/*****************************LOGIN-VIA-MOBILE********************************************** */
+router.post('/login',function(req,res)
+{
+  let mobile = req.body.mobile;
+  let fcm_device_id= req.body.fcm_device_id;
+  let otp=makeCode(4); 
+  if(mobile.length > 0)
+  {
+    res.json({
+      success:false,
+      message:'Mobile field required',
+      otp:otp
+    });
+
+  }
+  //1 for verified, 0 for unverified
+    sequelize.query("SELECT * FROM customer_otp WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile]}).then(rows => {
+    if (rows.length == 0)
+    {
+     
+    sequelize.query("INSERT INTO customer_otp (customer_id,mobile_number,otp,is_verified,createdDate,status,otp_expaire_time) VALUES (?,?,?,?,?,?,?)",{type:sequelize.QueryTypes.INSERT, raw:true, replacements:[1,mobile,otp,0,currentDate,1,15245]}).then(result => {
+    if (result.length > 0)
+    {  
+          res.json({
+          status:true,
+          message:'Mobile number does not exist in database ,Please fill the  registration form',
+           otp:otp,
+          id:result[0].id,
+         
+        });
+        
+      }else
+      {
+          res.json({
+          status:false,
+          message:'something went wrong',
+          otp:otp
+        });
+//
+      }
+   });
+
+    res.json({
+    status:true,
+    message:'Mobile number does not exist in database ,Please fill the  registration form',
+    Action:'OTP PAGE',
+    otp:otp,
+     });
+        } 
+        else if(rows.length > 0)
+        {
+        
+          if(rows[0].is_verified==0)
+          {
+            res.json({
+            status:true,
+            message:'Mobile Number does not verified, Please verify number',
+            id:rows[0].id
+            
+          });
+
+          }else
+          {
+          sequelize.query("SELECT * FROM customers WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [rows[0].mobile_number]}).then(CustomerRes => {
+          if(CustomerRes.length >0)
+          {
+            let customer_id=CustomerRes[0].id;  
+            sequelize.query("SELECT * FROM campaigan_customers WHERE customer_id = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [customer_id]}).then(results => {
+              if(results.length==0)
+              {
+                 res.json({
+                 status:false,
+                 message:'No any one campaign found for this customers'
+               });
+             }
+              else if(results.length > 0)
+              { 
+                 res.json({
+                 status:true,
+                 message:'Sucessfully login',
+                 token:token,
+                 CustomerRes
+               });
+     
+              } 
+     });
+
+}else
+{
+
+   res.json({
+   status:true,
+   message:'This user does not exist in our customers table',
+   
+  });
+    }    
+});
+}
+ }
+})
+})
+
+
+router.post('/okll',function(req,res){
+    var date1='2022-04-06 05:30:00';
+  //res.send(req.body);
+ // console.log("body",req.body);
+  /*var date1='2022-04-06 05:30:00';
+  var df=differnceTime.getTime();
+  var Difference_In_Time=differnceTime-date1;*/
+ /* var date1='2022-04-06 05:30:00';
+  var test = date1.getTime(); 
+  var test1 = new Date().getTime(differnceTime);
+  var total = test1 - test;*/
+
+  /*var startTime = new Date('2012/10/09 12:00'); 
+var endTime = new Date('2013/10/09 12:00');
+var difference = endTime.getTime() - startTime.getTime(); // This will give difference in milliseconds
+var resultInMinutes = Math.round(difference / 60000);
+  res.send({"total":resultInMinutes});  */
+  var today = differnceTime;
+var Christmas =date1;
+var diffMs = (Christmas - today); // milliseconds between now & Christmas
+var diffDays = Math.floor(diffMs / 86400000); // days
+var diffHrs = Math.floor((diffMs % 86400000) / 3600000); // hours
+var diffMins = Math.round(((diffMs % 86400000) % 3600000) / 60000); // minutes
+//alert(diffDays + " days, " + diffHrs + " hours, " + diffMins + " minutes until Christmas =)");
+res.send((diffDays + " days, " + diffHrs + " hours, " + diffMins + " minutes until Christmas ="));
+
+});
+
+/************************************FILE UPLOADS**************************************************************** */
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './upload')
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname)
+  }
+})
+var upload = multer({ storage: storage })
+/**************************************************************************************************** */
+
+
+/**********************************************Registrater***********************************************/
+router.post('/logout',function(req,res)
+{
+  let mobile = req.body.mobile;
+  sequelize.query("SELECT * FROM customer_otp WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile]}).then(rows => {
+   if (rows.length > 0)
+    {
+
+      sequelize.query("UPDATE customer_otp SET is_verified= ?, updatedDate=? WHERE mobile_number = ? ",{type:sequelize.QueryTypes.UPDATE, raw:true, replacements:[0,currentDate,mobile]}).then(result => {
+      res.json({
+      status: true,
+      message: 'successful! logout',                
+              });
+          });
+
+    }else
+    {
+
+      res.json({
+        status: false,
+        message: 'Fail!',                
+      });
+
+    }
+
+  });
+  
+});
+
+/*router.post('/registers',upload.single("image"),function(req,res){
+  
+  res.send("SUCESS");
+
+
+});*/
+
+  router.post('/registers',function(req,res){
+  var form = new multiparty.Form();
+  var uniq=makeCode(6);
+  form.parse(req, function(err, body, files) {
+  console.log("body",body.first_name);  
+  console.log("files",files.image);
+  let first_name = body.first_name; 
+  let middle_name = body.middle_name; 
+  let last_name = body.last_name; 
+  let state = body.state_var; 
+  let district =body.district; 
+  let address = body.address;
+  let tehsil =body.tehsil;
+  let images='';
+console.log("test",files);
+  if(files.image!=""){
+  let images = files.image[0].originalFilename;
+  }else
+  {
+   let images ='';
+  }
+  let mobile_number = body.mobile_number;
+  
+
+console.log("first_name.length",body.first_name);
+  //let no_of_catal_need= req.body.no_of_catal_need;
+  if(first_name == "")
+  {
+    res.json({
+      status:false,
+      message:'First name field required',
+      
+    });
+  }
+  if(last_name == "")
+  {
+    res.json({
+      status:false,
+      message:'last name field required',
+      
+    });
+
+  }
+  if(state_var == "")
+  {
+    res.json({
+      status:false,
+      message:'state field required',
+      
+    });
+
+  }
+  if(district == "")
+  {
+    res.json({
+      status:false,
+      message:'District field required',
+     
+    });
+  }
+  try {
+  sequelize.query("SELECT * FROM customers WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile_number]}).then(CustomerRes => {
+  if(CustomerRes.length >0)
+  {
+
+      res.json({
+      status:false,
+      message:'Mobile Number already exist ,Please registration another numbers',
+     
+    });
+
+  }
+  });
+  sequelize.query("INSERT INTO customers (first_name,middle_name,last_name,state,district,teshil,is_verified,created,number_of_cattle_to_buy,address,image,mobile_number) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",{type:sequelize.QueryTypes.INSERT, raw:true, replacements:[body.first_name,middle_name,body.last_name,body.state,body.district,body.teshil,1,currentDate,body.no_of_catal_need,body.address,images,body.mobile_number]}).then(insertRow => {
+   console.log(insertRow);
+   
+   if(insertRow)
+   {
+       sequelize.query("SELECT * FROM customers WHERE id = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [insertRow[0]]}).then(CustomerRes => {
+       res.json({
+       status:true,
+       message:'Thankyou for registration, Your registration successfully done',
+       ACTION:'HOME PAGE',
+       CustomerData:CustomerRes,
+      
+     });
+    });
+   }else
+   {
+
+      res.json({
+      status:false,
+      message:'something went wrong! try again later',
+     
+    });
+
+   }
+})
+ }
+  catch (ex) {  
+    res.json({
+    status: false,
+    message: 'Something went wrong.'      
+    }); 
+    
+    }
+
+  });// end loops 
+
+
+});
+
+/***********************************UPLOAD************************************************ */
+router.post('/profile',
+  upload.none(), function (req, res, next) {
+    // validate `req.body.name` here
+    // and call next(err) if it fails
+  //  res.end('done!');
+    next();
+  },
+  upload.single('image'), function (req, res, next) {
+    // file is now uploaded, save the location to the database
+    res.end('done!');
+  });
+
+/***********************************UPLOAD************************************************ */
+
+
+
+
+
+
+/***************************************otp verify****************************************************************/
+
+router.post('/verifyotp',function(req,res){
+  let mobile = req.body.mobile;
+  let otp = req.body.otp;    
+
+  let device_type = req.body.device_type;  
+  let device_id = req.body.device_id; 
+  let langaugue = req.body.langaugue; 
+  let fcm_token = req.body.fcm_token; 
+  sequelize.query("SELECT * FROM customer_otp WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile]}).then(rows => {
+  if (rows.length == 0) {
+            res.json({
+            status:false,
+            message:'Invalid  Mobile number'
+          });
+        } else{   
+
+          if(rows[0].is_verified==1)
+          {
+            res.json({
+              status:false,
+              message:'Otp already verified',
+             
+            });
+
+          }   
+
+          if(rows[0].otp == otp)
+          {
+            //  res.json({
+             // status:true,
+             // message:'Otp verify successfully',
+             // Action:"REGISTRATION PAGE FOR OUTSIDE USERS",
+             // rows,
+ sequelize.query("SELECT * FROM customers WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile]}).then(Data => {
+
+            if(Data.length > 0)
+            {
+              res.json({
+                status:true,
+                message:'Otp verify successfully',
+                //Action:"REGISTRATION PAGE FOR OUTSIDE USERS",
+                Data,
+  
+               
+              });
+
+            }else
+            {
+                
+
+              res.json({
+                status:true,
+                message:'Otp verify successfully',
+                //Action:"REGISTRATION PAGE FOR OUTSIDE USERS",
+                date:[ {
+                  Registration: false,
+                  Cattle: false
+                }
+              ]
+                })
+
+            }
+
+             
+          });
+             
+           
+            sequelize.query("UPDATE customer_otp SET is_verified= ?, updatedDate=? WHERE mobile_number = ? ",{type:sequelize.QueryTypes.UPDATE, raw:true, replacements:[1,currentDate,mobile]}).then(rows => {
+            res.json({
+                    status: true,
+                    message: 'successful!',                
+                  });
+              });
+             sequelize.query("UPDATE customers SET fcm_device_id= ?, device_type=?,device_id=?,updated=? WHERE mobile_number = ? ",{type:sequelize.QueryTypes.UPDATE, raw:true, replacements:[fcm_token,device_type,device_id,currentDate,mobile]}).then(rows => { });
+        
+          }
+          else
+          {
+            res.json({
+              status:false,
+              message:'Otp does not  matched',
+             
+            });
+
+            }
+          }
+      })
+})
+
+
+/******************************************RESEND OTP****************************************************** */
+router.post('/resendyotp',function(req,res){
+  let mobile = req.body.mobile;
+  let otp=makeCode(4); 
+  if(mobile.length > 0)
+  {
+    res.json({
+      status:false,
+      message:'Mobile field required',
+      otp:otp
+    });
+
+  }  
+ try{
+    sequelize.query("SELECT * FROM customer_otp WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile]}).then(rows => {
+      if (rows.length == 0) {
+        res.json({
+          status:false,
+          message:'Invalid  Mobile number'
+        });
+      }  
+    });
+   sequelize.query("UPDATE customer_otp SET otp= ?, updatedDate=? WHERE mobile_number = ? ",{type:sequelize.QueryTypes.UPDATE, raw:true, replacements:[otp,currentDate,mobile]}).then(rows => {
+    res.json({
+      status: true,
+            message: 'Your otp is ' +  otp,                
+          });
+      });
+    }
+    catch(prem)
+    {
+      res.json({
+        success: true,
+        message: 'Something went wrong',                
+      });
+
+    }
+
+})
+
+/**************************************ADD_CATYLE******************************************************* */
+router.post('/add_cattle',function(req,res){
+  let mobile = req.body.mobile;
+  let id = req.body.id;
+  let no_of_cattle = req.body.no_of_cattle;
+  let otp=makeCode(4); 
+  if(mobile.length > 0)
+  {
+      res.json({
+      status:false,
+      message:'Mobile field required',
+      otp:otp
+    });
+
+  }  
+ try{
+    sequelize.query("SELECT * FROM customers WHERE mobile_number = ?",{type:sequelize.QueryTypes.SELECT, raw:true,  replacements: [mobile]}).then(rows => {
+      if (rows.length == 0) {
+        res.json({
+          status:false,
+          message:'Invalid  Mobile number'
+        });
+      }  
+    });
+   sequelize.query("UPDATE customers SET number_of_cattle_to_buy= ?, updated=? WHERE mobile_number = ? ",{type:sequelize.QueryTypes.UPDATE, raw:true, replacements:[no_of_cattle,currentDate,mobile]}).then(rows => {
+    res.json({
+      status: true,
+            message: 'Cattle added sucessfully',                
+          });
+      });
+    }
+    catch(prem)
+    {
+      res.json({
+        success: true,
+        message: 'Something went wrong',                
+      });
+
+    }
+
+})
+
+
+
+
+
+
+
+
+/************************************************************************************************ */
+
+
+
+/******************************************OTP CODE****************************************************** */
+function makeCode(length) {
+  var result           = '';
+  var characters       = '5245';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < length; i++ ) {
+     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+
+
+router.post('/endpoint', function (req, res) { 
+  
+  var form = new multiparty.Form();
+  
+  form.parse(req, function(err, fields, files) {
+    console.log("err",err);
+    var first_name=fields.first_name;
+    console.log("fields",fields.first_name);
+    console.log("files",files);
+    if(fields.first_name=="")
+    {
+      res.json({
+        status:false,
+        message:'required fields',
+       
+      });
+
+    }   
+    //console.log("name",req.body.first_name);
+      // fields fields fields
+  });
+})
+
+
+
+
+module.exports = router;
