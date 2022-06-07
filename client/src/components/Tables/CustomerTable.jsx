@@ -7,23 +7,16 @@ import { useNavigate } from "react-router-dom";
 import { PATHS } from "../../routes/paths";
 import CreateIcon from "@mui/icons-material/Create";
 import DeleteIcon from "@mui/icons-material/Delete";
-
+import { useDispatch } from "react-redux";
+import { selectedEntry } from "../../features/selectedEntrySlice";
 const CustomerTable = () => {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleEditClick = (row) => {
-    navigate(PATHS.customerDetails);
-    console.log("EDIT ROW: ", row);
-  };
-
-  const handleDeleteClick = (row) => {
-    console.log("DELTE ROW: ", row);
-  };
-
+  // APIS______________________________________
   const getcustomers = async () => {
     try {
       const response = await axios.get(
@@ -35,6 +28,31 @@ const CustomerTable = () => {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const deleteCustomer = async (row) => {
+    try {
+      const response = await axios
+        .put(`http://localhost:3030/api/admin/deleteCustomer/${row.id}`)
+        .then((res) => getcustomers());
+
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // APIS______________________________________END
+
+  const handleEditClick = (row) => {
+    navigate(PATHS.customerDetails);
+    console.log("EDIT ROW: ", row);
+  };
+
+  const handleDeleteClick = (row) => {
+    console.log("DELTE ROW: ", row);
+    dispatch(selectedEntry(row));
+    deleteCustomer(row);
   };
 
   useEffect(() => {
