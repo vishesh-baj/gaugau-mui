@@ -9,6 +9,8 @@ import CreateIcon from "@mui/icons-material/Create";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useDispatch } from "react-redux";
 import { selectedEntry } from "../../features/selectedEntrySlice";
+import { TextField } from "@mui/material";
+
 const CustomerTable = () => {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
@@ -17,6 +19,8 @@ const CustomerTable = () => {
   const navigate = useNavigate();
 
   // APIS______________________________________
+
+  // * get customers api
   const getcustomers = async () => {
     try {
       const response = await axios.get(
@@ -29,13 +33,12 @@ const CustomerTable = () => {
       console.log(error);
     }
   };
-
+  // * delete customers api
   const deleteCustomer = async (row) => {
     try {
       const response = await axios
         .put(`http://localhost:3030/api/admin/deleteCustomer/${row.id}`)
-        .then((res) => getcustomers());
-
+        .then((_res) => getcustomers());
       console.log(response);
     } catch (error) {
       console.log(error);
@@ -43,9 +46,9 @@ const CustomerTable = () => {
   };
 
   // APIS______________________________________END
-
   const handleEditClick = (row) => {
     navigate(PATHS.customerDetails);
+    dispatch(selectedEntry(row));
     console.log("EDIT ROW: ", row);
   };
 
@@ -62,10 +65,16 @@ const CustomerTable = () => {
   useEffect(() => {
     const result = customers.filter((customer) => {
       return (
-        //   other search filters to be added
+        // * SEARCH FILTERS
         customer.first_name.toLowerCase().match(search.toLowerCase()) ||
         customer.last_name.toLowerCase().match(search.toLowerCase()) ||
-        customer.mobile_number.toLowerCase().match(search.toLowerCase())
+        customer.mobile_number.toLowerCase().match(search.toLowerCase()) ||
+        String(customer.number_of_cattle_to_buy).match(search.toLowerCase()) ||
+        customer.stateref.name.toLowerCase().match(search.toLowerCase()) ||
+        customer.districtref.district
+          .toLowerCase()
+          .match(search.toLowerCase()) ||
+        customer.tehsilref.tahshil.toLowerCase().match(search.toLowerCase())
       );
     });
     setFilteredCustomers(result);
@@ -131,12 +140,16 @@ const CustomerTable = () => {
           <CreateIcon
             style={{ cursor: "pointer" }}
             color="primary"
-            onClick={() => handleEditClick(row)}
+            onClick={() => {
+              handleEditClick(row);
+            }}
           />
           <DeleteIcon
             style={{ cursor: "pointer" }}
             color="error"
-            onClick={() => handleDeleteClick(row)}
+            onClick={() => {
+              handleDeleteClick(row);
+            }}
           />
         </Stack>
       ),
@@ -144,7 +157,8 @@ const CustomerTable = () => {
   ];
 
   return (
-    <div>
+    <>
+      {/* DATATABLE  */}
       <DataTable
         title="customers List"
         columns={columns}
@@ -156,7 +170,7 @@ const CustomerTable = () => {
         responsive
         subHeader
         subHeaderComponent={
-          <input
+          <TextField
             type="text"
             placeholder="Search"
             value={search}
@@ -164,7 +178,8 @@ const CustomerTable = () => {
           />
         }
       />
-    </div>
+      {/* MODAL */}
+    </>
   );
 };
 

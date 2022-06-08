@@ -14,5 +14,4 @@ const selectedEntrySlice = createSlice({
 });
 
 export const { selectedEntry } = selectedEntrySlice.actions;
-
 export default selectedEntrySlice.reducer;

@@ -12,21 +12,9 @@ const ClientsTable = () => {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState("");
   const [filteredClients, setFilteredClients] = useState([]);
-
   const navigate = useNavigate();
 
-  // row edit handler
-  const handleEditClick = (row) => {
-    navigate(PATHS.clientDetails);
-    console.log("EDIT ROW: ", row);
-  };
-
-  // row delete handle
-  const handleDeleteClick = (row) => {
-    console.log("DELTE ROW: ", row);
-  };
-
-  // fetch clients data
+  // * fetch clients data_______________________API
   const getclients = async () => {
     try {
       const response = await axios.get(
@@ -40,6 +28,30 @@ const ClientsTable = () => {
     }
   };
 
+  // * delete clients data_______________________API
+  const deleteClients = async (row) => {
+    try {
+      const response = await axios
+        .put(`http://localhost:3030/api/admin/deleteClient/${row.id}`)
+        .then((_res) => getclients());
+      console.log("CLIENT_DELETED: ", response.data.Message);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // row edit handler
+  const handleEditClick = (row) => {
+    navigate(PATHS.clientDetails);
+    console.log("EDIT ROW: ", row);
+  };
+
+  // row delete handle
+  const handleDeleteClick = (row) => {
+    console.log("DELTE ROW: ", row);
+    deleteClients(row);
+  };
+
   useEffect(() => {
     getclients();
   }, []);
@@ -48,12 +60,9 @@ const ClientsTable = () => {
   useEffect(() => {
     const result = clients.filter((client) => {
       return (
-        //   other search filters to be added
+        // * SEARCH FILTERS
         client.client_name.toLowerCase().match(search.toLowerCase()) ||
-        String(client.mobile_number)
-          .toLowerCase()
-          .match(search.toLowerCase()) ||
-        client.descriptions.toLowerCase().match(search.toLowerCase())
+        String(client.mobile_number).toLowerCase().match(search.toLowerCase())
       );
     });
     setFilteredClients(result);
@@ -98,28 +107,25 @@ const ClientsTable = () => {
   ];
 
   return (
-    <div>
-      <DataTable
-        title="clients List"
-        columns={columns}
-        data={filteredClients}
-        fixedHeader
-        fixedHeaderScrollHeight="450px"
-        pagination
-        highlightOnHover
-        responsive
-        subHeader
-        subHeaderComponent={
-          <TextField
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            id="standard-basic"
-            label="Search"
-            variant="standard"
-          />
-        }
-      />
-    </div>
+    <DataTable
+      title="clients List"
+      columns={columns}
+      data={filteredClients}
+      fixedHeader
+      fixedHeaderScrollHeight="450px"
+      pagination
+      highlightOnHover
+      responsive
+      subHeader
+      subHeaderComponent={
+        <TextField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          id="standard-basic"
+          label="Search"
+        />
+      }
+    />
   );
 };
 export default ClientsTable;
